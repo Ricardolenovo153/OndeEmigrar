@@ -1,56 +1,40 @@
-// server.js
+// server.js (VERSÃO DE TESTE DE CONEXÃO)
 const express = require('express');
+const mysql = require('mysql2');
 const cors = require('cors');
-const db = require('./config/db');
-const path = require('path');
 
 const app = express();
-const PORT = 3000;
-
-// Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.static('public')); // Serve o teu HTML/CSS/JS estático
 
-// ROTA PRINCIPAL: Recebe os sliders e pede ao SQL para calcular
-app.post('/api/ranking', (req, res) => {
-    const { eco, sau, edu, pol, dir, emi } = req.body;
+// 1. Configuração da Conexão
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'root123',          // Verifica se tens password no teu MySQL
+    database: 'migracao' // Tem a certeza que este nome é igual ao do Workbench
+});
 
-    // A Mágica do SQL: O cálculo é feito aqui, não no Node
-    
-    /*
-    const sqlQuery = `
-        SELECT 
-            c.country_name, 
-            i.gdp_per_capita, 
-            i.life_expectancy,
-            -- Cálculo de Score Ponderado (Normalização aproximada)
-            (
-                (IFNULL(i.gdp_per_capita, 0) * 1 * ?) +          -- Economia
-                (IFNULL(i.life_expectancy, 0) * 500 * ?) +       -- Saúde
-                (IFNULL(i.tertiary_education, 0) * 500 * ?) +    -- Educação
-                (IFNULL(i.political_stability, 0) * 5000 * ?) +  -- Política
-                (IFNULL(i.rule_oflaw, 0) * 5000 * ?) -           -- Direito
-                (IFNULL(i.share, 0) * 5000 * ?)                  -- Baixa Emigração (Subtrair)
-            ) AS score_final
-        FROM indicator i
-        JOIN country c ON i.country_id = c.id_country
-        WHERE i.year = 2020 
-        ORDER BY score_final DESC
-        LIMIT 5;
-    `;
-    */
+// 2. Testar a Conexão ao arrancar
+db.connect(err => {
+    if (err) {
+        console.error('❌ ERRO CRÍTICO: O Node.js não conseguiu ligar ao MySQL!');
+        console.error('Causa:', err.code, err.sqlMessage);
+    } else {
+        console.log('✅ SUCESSO: Ligação ao MySQL estabelecida!');
+    }
+});
 
-    // Injeta os valores dos sliders nos ? da query
-    db.query(sqlQuery, [eco, sau, edu, pol, dir, emi], (err, results) => {
+// 3. Rota de Teste Simples
+app.get('/teste-db', (req, res) => {
+    db.query('SELECT 1 + 1 AS solucao', (err, results) => {
         if (err) {
-            console.error("Erro SQL:", err);
-            return res.status(500).json({ error: "Erro ao calcular ranking" });
+            res.status(500).send('Erro na Query: ' + err.message);
+        } else {
+            res.send(`<h1>Tudo a funcionar!</h1><p>O MySQL respondeu: 1+1 = ${results[0].solucao}</p>`);
         }
-        res.json(results);
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor a correr em http://localhost:${PORT}`);
+app.listen(3000, () => {
+    console.log('📡 Servidor de teste à escuta na porta 3000');
 });
