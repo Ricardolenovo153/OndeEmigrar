@@ -14,12 +14,6 @@ document.querySelectorAll('.range-slider').forEach(slider => {
     });
 });
 
-const countriesData = [
-            { name: "Suíça", scores: [98, 92, 85, 99, 97, 95] },
-            { name: "Dinamarca", scores: [85, 96, 90, 98, 99, 90] },
-            { name: "Noruega", scores: [92, 98, 88, 97, 95, 92] },
-            { name: "Holanda", scores: [90, 88, 94, 92, 93, 85] }
-        ];
 
         let profiles = JSON.parse(localStorage.getItem('emigrar_v4')) || [
             { id: 1, name: 'Perfil Padrão', active: true, values: [20, 20, 20, 15, 15, 10] }
@@ -107,18 +101,48 @@ const countriesData = [
             }
         }
 
-        function calculateRanking() {
-            const weights = Array.from({length: 6}, (_, i) => parseInt(document.getElementById(`slider-${i}`).value));
-            const ranked = countriesData.map(c => {
-                let finalScore = c.scores.reduce((acc, s, i) => acc + (s * (weights[i] / 100)), 0);
-                return { name: c.name, score: finalScore.toFixed(1) };
-            }).sort((a, b) => b.score - a.score);
+    async function calculateRanking() {
+    // 1. Capturar valores dos sliders
+    const weights = {
+        eco: parseInt(document.getElementById('slider-0').value),
+        sau: parseInt(document.getElementById('slider-1').value),
+        edu: parseInt(document.getElementById('slider-2').value),
+        pol: parseInt(document.getElementById('slider-3').value),
+        dir: parseInt(document.getElementById('slider-4').value),
+        emi: parseInt(document.getElementById('slider-5').value)
+    };
 
-            document.getElementById('ranking-list').innerHTML = ranked.map((c, i) => `
-                <div class="ranking-item"><span class="rank-pos">#${i+1}</span><span class="rank-name">${c.name}</span><span class="rank-score">${c.score} pts</span></div>
-            `).join('');
-            togglePages('results-page');
-        }
+    const rankingContainer = document.getElementById('ranking-list');
+    rankingContainer.innerHTML = '<p style="text-align:center">A consultar a Base de Dados...</p>';
+    togglePages('results-page');
+
+    try {
+        // 2. Pedir ao Servidor (Node.js -> MySQL)
+        const response = await fetch('/api/ranking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(weights)
+        });
+
+        const data = await response.json();
+
+        // 3. Mostrar os resultados REAIS vindos do SQL
+        rankingContainer.innerHTML = data.map((c, i) => `
+            <div class="ranking-item">
+                <span class="rank-pos">#${i+1}</span>
+                <span class="rank-name">${c.country_name}</span>
+                <div class="rank-details">
+                    <small>PIB: $${c.gdp_per_capita}</small>
+                    <small>Vida: ${c.life_expectancy} anos</small>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Erro:', error);
+        rankingContainer.innerHTML = '<p style="color:red">Erro ao ligar ao servidor.</p>';
+    }
+}
 
         function createProfile() {
             const name = prompt("Nome do novo perfil:");

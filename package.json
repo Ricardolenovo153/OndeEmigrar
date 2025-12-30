@@ -1,0 +1,26 @@
+{
+  "name": "ondeemigrar",
+  "version": "1.0.0",
+  "description": "App para ajudar a escolher um país para emigrar: o utilizador seleciona o país de origem, um ano base e define pesos para critérios (economia/PIB per capita, saúde, educação, estabilidade política, rule of law e baixa emigração). A aplicação calcula um score com os dados do dataset e devolve um ranking de países sugeridos com gráficos comparativos.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ricardolenovo153/OndeEmigrar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ricardolenovo153/OndeEmigrar/issues"
+  },
+  "homepage": "https://github.com/Ricardolenovo153/OndeEmigrar#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mysql2": "^3.16.0"
+  }
+}
