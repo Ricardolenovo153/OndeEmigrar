@@ -253,3 +253,45 @@ body {
     display: block;
     margin-top: 2px;
 }
+
+/* Inputs de formulário (login/registo) */
+.custom-input {
+    background: #0d1127;
+    border: 1px solid var(--border-ui);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    width: 100%;
+    outline: none;
+    transition: var(--transition-fast);
+    font-family: var(--font-main);
+    font-size: 1rem;
+}
+
+.custom-input:focus {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 12px var(--neon-glow);
+}
+
+.custom-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Container para uniformizar largura dos campos e botão */
+.form-fields-container {
+    width: 100%;
+    max-width: 380px; /* Ajusta este valor se quiseres mais largo/estreito */
+    margin: 0 auto;
+}
+
+/* Garante que inputs e botão ocupem toda a largura disponível */
+.full-width {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Ajuste fino no botão para ficar alinhado perfeitamente */
+.btn-main.full-width {
+    padding: 18px 0; /* Remove padding lateral, usa só vertical */
+    font-size: 1.1rem;
+}

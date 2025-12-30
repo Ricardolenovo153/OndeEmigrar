@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quero Emigrar - Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+
+        <!-- Formulário de Login -->
+        <main id="login-page" class="card" style="max-width: 480px; margin: 60px auto;">
+            <header>
+                <h1 class="logo">quero<span>emigrar</span></h1>
+                <p class="tagline">Bem-vindo de volta</p>
+            </header>
+
+            <form id="login-form" style="margin-top: 50px;">
+                <div class="form-fields-container">
+                    <div class="input-group" style="margin-bottom: 25px;">
+                        <label>E-mail</label>
+                        <input type="email" id="login-email" class="custom-input full-width"
+                            placeholder="o.teu@email.com" required>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 40px;">
+                        <label>Palavra-passe</label>
+                        <input type="password" id="login-password" class="custom-input full-width"
+                            placeholder="••••••••••" required>
+                    </div>
+
+                    <div class="actions-group" style="justify-content: center; margin-top: 10px;">
+                        <button type="submit" class="btn-main full-width">
+                            ENTRAR
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <p style="margin-top: 40px; text-align: center; color: var(--text-dim);">
+                Ainda não tens conta?
+                <a href="#" onclick="showRegister(); return false;" style="color: var(--neon-cyan); font-weight: 700;">
+                    Criar conta gratuita
+                </a>
+            </p>
+
+            <p style="margin-top: 50px; text-align: center;">
+                <a href="home.html" style="color: var(--text-dim); font-size: 0.9rem;">← Voltar à página inicial</a>
+            </p>
+        </main>
+
+        <!-- Formulário de Registo -->
+        <main id="register-page" class="card hidden" style="max-width: 480px; margin: 60px auto;">
+            <header>
+                <h1 class="logo">quero<span>emigrar</span></h1>
+                <p class="tagline">Cria a tua conta gratuita</p>
+            </header>
+
+            <form id="register-form" style="margin-top: 50px;">
+                <div class="form-fields-container">
+                    <div class="input-group" style="margin-bottom: 25px;">
+                        <label>Nome completo</label>
+                        <input type="text" id="reg-name" class="custom-input full-width" required>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 25px;">
+                        <label>E-mail</label>
+                        <input type="email" id="reg-email" class="custom-input full-width" placeholder="o.teu@email.com"
+                            required>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 40px;">
+                        <label>Palavra-passe</label>
+                        <input type="password" id="reg-password" class="custom-input full-width"
+                            placeholder="Mínimo 6 caracteres" required>
+                    </div>
+
+                    <div class="actions-group" style="justify-content: center; margin-top: 10px;">
+                        <button type="submit" class="btn-main full-width">
+                            CRIAR CONTA
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <p style="margin-top: 40px; text-align: center; color: var(--text-dim);">
+                Já tens conta?
+                <a href="#" onclick="showLogin(); return false;" style="color: var(--neon-cyan); font-weight: 700;">
+                    Entrar
+                </a>
+            </p>
+        </main>
+
+    </div>
+    <script src="../js/login.js"></script>
+</body>
+
+</html>
