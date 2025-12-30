@@ -1,64 +1,71 @@
-// ==========================================
-// 1. CONFIGURAÇÃO INICIAL E NAVEGAÇÃO
-// ==========================================
-
-// Variável global para guardar os perfis que vêm da BD
 let profiles = [];
 
-// Ao abrir o site, vai buscar os perfis à Base de Dados
 window.onload = async () => {
     await fetchProfiles();
     renderProfiles();
 };
 
-// Alternar entre páginas (Home, Perfis, Resultados)
-function togglePages(pageId) {
-    // Esconde todas as páginas
-    document.querySelectorAll('main').forEach(m => m.classList.add('hidden'));
-    
-    // Mostra a página pedida
-    document.getElementById(pageId).classList.remove('hidden');
-
-    // Se voltarmos à Home, recarrega os sliders do perfil ativo
-    if(pageId === 'home-page') loadActiveProfileValues();
-}
-
-// Atualiza o texto da percentagem enquanto mexes no slider
-function updateSliderUI(index, val) {
-    document.getElementById(`val-${index}`).innerText = val + '%';
-}
-
-// ==========================================
-// 2. FUNÇÕES DE COMUNICAÇÃO COM A BD (API)
-// ==========================================
-
-// BUSCAR PERFIS (GET)
 async function fetchProfiles() {
     try {
         const res = await fetch('http://localhost:3000/api/profiles');
+        if (res.status === 401) {
+            window.location.href = '/'; // Se não autorizado, vai para login
+            return;
+        }
         const data = await res.json();
-        
-        if (data.length > 0) {
+        if (Array.isArray(data) && data.length > 0) {
             profiles = data;
-            // Define o primeiro (mais recente) como ativo por defeito
-            profiles.forEach(p => p.active = false);
-            profiles[0].active = true;
+            if (!profiles.some(p => p.active)) {
+                profiles.forEach(p => p.active = false);
+                profiles[0].active = true;
+            }
         } else {
             profiles = [];
         }
     } catch (e) {
-        console.error("Erro ao buscar perfis:", e);
-        showToast("Erro: Backend desligado?");
+        console.error(e);
+        showToast("Erro ao carregar perfis.");
     }
 }
 
-// SALVAR PERFIL (POST)
+// SALVAR INTELIGENTE
 async function saveCurrentProfile() {
-    const name = prompt("Nome para esta configuração de pesquisa:");
-    if (!name) return;
-
-    // Captura os valores dos 6 sliders
+    const active = profiles.find(p => p.active);
     const values = getSliderValues();
+
+    if (active) {
+        // Pergunta se quer atualizar
+        const wantToUpdate = confirm(
+            `O perfil "${active.name}" está selecionado.\n\n` +
+            `[OK] = ATUALIZAR este perfil\n` +
+            `[CANCELAR] = Criar NOVO`
+        );
+
+        if (wantToUpdate) {
+            try {
+                const res = await fetch(`http://localhost:3000/api/profiles/${active.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: active.name, values })
+                });
+                if (res.ok) {
+                    showToast(`Perfil "${active.name}" atualizado!`);
+                    await fetchProfiles();
+                    profiles.forEach(p => p.active = (p.id === active.id));
+                    renderProfiles();
+                    return;
+                }
+            } catch(e) { console.error(e); }
+        }
+    }
+
+    // Criar Novo
+    createNewProfile(values);
+}
+
+async function createNewProfile(values) {
+    const name = prompt("Nome para o novo perfil:");
+    if (!name) return;
 
     try {
         const res = await fetch('http://localhost:3000/api/profiles', {
@@ -66,85 +73,71 @@ async function saveCurrentProfile() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, values })
         });
-
         if (res.ok) {
-            showToast("✅ Perfil guardado na BD!");
-            await fetchProfiles(); // Atualiza a lista com o novo perfil
+            showToast("✅ Novo perfil criado!");
+            await fetchProfiles();
+            if(profiles.length > 0) {
+                profiles.forEach(p => p.active = false);
+                profiles[0].active = true;
+            }
             renderProfiles();
-        } else {
-            showToast("Erro ao gravar.");
         }
-    } catch (e) {
-        showToast("Erro de conexão.");
-    }
+    } catch (e) { showToast("Erro conexão."); }
 }
 
-// CALCULAR RANKING (POST para a BD)
-async function calculateRanking() {
-    const rankingContainer = document.getElementById('ranking-list');
-    rankingContainer.innerHTML = '<p class="loading">A consultar o MySQL...</p>';
-    togglePages('results-page');
-
-    // Prepara os dados para enviar (mapeia slider-0 a slider-5 para nomes)
-    const values = getSliderValues();
-    const payload = {
-        eco: values[0],
-        sau: values[1],
-        edu: values[2],
-        pol: values[3],
-        dir: values[4],
-        emi: values[5]
-    };
+async function deleteProfile(id, event) {
+    event.stopPropagation();
+    if(!confirm("Tens a certeza que queres apagar?")) return;
 
     try {
-        // Pede ao servidor para fazer a query SQL matemática
-        const res = await fetch('http://localhost:3000/api/ranking', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+        const res = await fetch(`http://localhost:3000/api/profiles/${id}`, {
+            method: 'DELETE'
         });
-
-        const data = await res.json();
-        renderRanking(data);
-
-    } catch (e) {
-        rankingContainer.innerHTML = '<p class="error">Erro ao calcular. O servidor está ligado?</p>';
-    }
+        if (res.ok) {
+            showToast("🗑️ Apagado!");
+            await fetchProfiles();
+            renderProfiles();
+        } else {
+            showToast("Erro ao apagar.");
+        }
+    } catch (e) { showToast("Erro conexão."); }
 }
 
-// ==========================================
-// 3. FUNÇÕES VISUAIS (RENDER)
-// ==========================================
-
-// Desenha a lista de cartões de perfil
 function renderProfiles() {
     const container = document.getElementById('profiles-container');
     const btnCount = document.getElementById('btn-count-perfil');
-    
-    // Atualiza contador se o botão existir
-    if(btnCount) btnCount.innerText = `Meus Perfis (${profiles.length})`;
-    
-    container.innerHTML = ''; // Limpa antes de desenhar
+    const labels = ["ECO", "SAÚ", "EDU", "POL", "DIR", "EMI"]; 
 
-    // Botão "Criar Novo" (atalho visual)
+    if(btnCount) btnCount.innerText = `Meus Perfis (${profiles.length})`;
+    container.innerHTML = ''; 
+
     const addNewDiv = document.createElement('div');
     addNewDiv.className = 'profile-card add-new';
-    addNewDiv.onclick = () => { togglePages('home-page'); setTimeout(() => saveCurrentProfile(), 200); };
+    addNewDiv.onclick = () => { 
+        profiles.forEach(p => p.active = false); 
+        renderProfiles(); 
+        togglePages('home-page'); 
+        setTimeout(() => createNewProfile(getSliderValues()), 200); 
+    };
     addNewDiv.innerHTML = `<div class="add-circle">+</div><p>Novo Perfil</p>`;
     container.appendChild(addNewDiv);
 
-    // Lista os perfis vindos da BD
     profiles.forEach(p => {
         const div = document.createElement('div');
         div.className = `profile-card ${p.active ? 'active' : ''}`;
         div.onclick = () => setActive(p.id);
         
-        // Mini-gráfico de barras (CSS)
-        const bars = p.values.map(v => `<div class="mini-bar" style="height:${v}%"></div>`).join('');
+        const bars = p.values.map((v, i) => `
+            <div class="bar-wrapper">
+                <div class="preview-bar" style="height:${v}%"></div>
+                <span class="bar-label">${labels[i]}</span>
+            </div>
+        `).join('');
 
         div.innerHTML = `
+            <button class="btn-del" onclick="deleteProfile(${p.id}, event)">×</button>
             <div class="profile-info">
-                <h3>${p.name}</h3>
+                <h3 class="p-name">${p.name}</h3>
                 <div class="bars-container">${bars}</div>
             </div>
         `;
@@ -152,73 +145,72 @@ function renderProfiles() {
     });
 }
 
-// Desenha a lista de resultados (Países)
+async function calculateRanking() {
+    const values = getSliderValues();
+    const payload = { eco: values[0], sau: values[1], edu: values[2], pol: values[3], dir: values[4], emi: values[5] };
+    
+    togglePages('results-page');
+    document.getElementById('ranking-list').innerHTML = '<p class="loading">A calcular...</p>';
+
+    try {
+        const res = await fetch('http://localhost:3000/api/ranking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        renderRanking(data);
+    } catch (e) { document.getElementById('ranking-list').innerHTML = '<p class="error">Erro.</p>'; }
+}
+
 function renderRanking(data) {
     const container = document.getElementById('ranking-list');
-    if(!data || data.length === 0) {
-        container.innerHTML = '<p>Sem resultados.</p>';
-        return;
-    }
-
-    container.innerHTML = data.map((country, index) => `
+    if(!data || data.length === 0) { container.innerHTML = '<p>Sem resultados.</p>'; return; }
+    container.innerHTML = data.map((c, i) => `
         <div class="ranking-item">
-            <div class="rank-pos">#${index + 1}</div>
-            <div class="rank-info">
-                <h3>${country.country_name}</h3>
-                <p>PIB: $${country.gdp_per_capita} | Exp. Vida: ${country.life_expectancy}</p>
-            </div>
-            <div class="rank-score">
-                ${Math.round(country.score_final || 0)} pts
-            </div>
+            <div class="rank-pos">#${i + 1}</div>
+            <div class="rank-info"><h3>${c.country_name}</h3><p>PIB: $${c.gdp_per_capita}</p></div>
+            <div class="rank-score">${Math.round(c.score_final)} pts</div>
         </div>
     `).join('');
 }
 
-// ==========================================
-// 4. UTILITÁRIOS
-// ==========================================
-
 function getSliderValues() {
-    return [
-        parseInt(document.getElementById('slider-0').value) || 0,
-        parseInt(document.getElementById('slider-1').value) || 0,
-        parseInt(document.getElementById('slider-2').value) || 0,
-        parseInt(document.getElementById('slider-3').value) || 0,
-        parseInt(document.getElementById('slider-4').value) || 0,
-        parseInt(document.getElementById('slider-5').value) || 0
-    ];
-}
-
-function loadActiveProfileValues() {
-    const active = profiles.find(p => p.active);
-    if (active) {
-        active.values.forEach((val, i) => {
-            const slider = document.getElementById(`slider-${i}`);
-            if(slider) {
-                slider.value = val;
-                updateSliderUI(i, val);
-            }
-        });
-    }
+    return [0,1,2,3,4,5].map(i => parseInt(document.getElementById(`slider-${i}`).value) || 0);
 }
 
 function setActive(id) {
     profiles.forEach(p => p.active = (p.id === id));
-    loadActiveProfileValues();
+    const active = profiles.find(p => p.active);
+    if (active) active.values.forEach((v, i) => {
+        const el = document.getElementById(`slider-${i}`);
+        if(el) { el.value = v; document.getElementById(`val-${i}`).innerText = v + '%'; }
+    });
     renderProfiles();
 }
 
+function togglePages(pageId) {
+    document.querySelectorAll('main').forEach(m => m.classList.add('hidden'));
+    document.getElementById(pageId).classList.remove('hidden');
+    if(pageId === 'home-page') loadActiveProfileValues();
+}
+
 function showToast(msg) {
+    let container = document.getElementById('toast-container');
+    if(!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     toast.innerText = msg;
-    document.body.appendChild(toast);
+    container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Inicializa listeners dos sliders para atualizar o texto %
 document.querySelectorAll('.range-slider').forEach((slider, index) => {
-    slider.addEventListener('input', function() {
-        updateSliderUI(index, this.value);
+    slider.addEventListener('input', function() { 
+        document.getElementById(`val-${index}`).innerText = this.value + '%'; 
     });
 });

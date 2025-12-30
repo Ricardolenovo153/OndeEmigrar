@@ -1,51 +1,55 @@
-function showLogin() {
-    document.getElementById('login-page').classList.remove('hidden');
-    document.getElementById('register-page').classList.add('hidden');
+// Lógica de Login
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const btnSubmit = this.querySelector('button');
+
+        const originalText = btnSubmit.innerText;
+        btnSubmit.innerText = "A ENTRAR...";
+        btnSubmit.disabled = true;
+
+        try {
+            const res = await fetch('http://localhost:3000/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast("✅ Login efetuado!");
+                // AQUI ESTAVA O ERRO: Agora vai para /dashboard
+                setTimeout(() => {
+                    window.location.href = '/dashboard'; 
+                }, 1000);
+            } else {
+                showToast("❌ " + (data.error || "Dados incorretos"));
+                btnSubmit.innerText = originalText;
+                btnSubmit.disabled = false;
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Erro de conexão.");
+            btnSubmit.innerText = originalText;
+            btnSubmit.disabled = false;
+        }
+    });
 }
 
-function showRegister() {
-    document.getElementById('login-page').classList.add('hidden');
-    document.getElementById('register-page').classList.remove('hidden');
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.innerText = message;
-    document.getElementById('toast-container').appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
-}
-
-document.getElementById('login-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const pass = document.getElementById('login-password').value;
-    if (email && pass.length >= 6) {
-        localStorage.setItem('qe_loggedIn', 'true');
-        localStorage.setItem('qe_userEmail', email);
-        showToast('Sessão iniciada com sucesso!');
-        setTimeout(() => window.location.href = 'dashboard.html', 1200);
+function showToast(msg) {
+    const container = document.getElementById('toast-container');
+    if (container) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     } else {
-        showToast('Credenciais inválidas.');
+        alert(msg);
     }
-});
-
-document.getElementById('register-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-password').value;
-    if (name && email && pass.length >= 6) {
-        localStorage.setItem('qe_loggedIn', 'true');
-        localStorage.setItem('qe_userEmail', email);
-        showToast(`Bem-vindo, ${name.split(' ')[0]}! Conta criada.`);
-        setTimeout(() => window.location.href = 'dashboard.html', 1200);
-    } else {
-        showToast('Preenche todos os campos corretamente.');
-    }
-});
-
-// Mostra o login por defeito ao carregar a página
-window.onload = function() {
-    showLogin();
-};
+}
