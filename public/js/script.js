@@ -16,10 +16,16 @@ function setupGuestMode() {
     const btnProfiles = document.getElementById('btn-count-perfil');
     
     if (btnSave) {
-        btnSave.disabled = true;
+        // Removemos o 'disabled' para que o clique funcione, mas mudamos o estilo e a lógica
         btnSave.style.opacity = '0.5';
+        btnSave.style.cursor = 'not-allowed';
         btnSave.title = "Regista-te para salvar perfis";
-        btnSave.onclick = () => showToast("⚠️ Precisas de uma conta para salvar perfis!");
+        // Sobrescrevemos a função original de salvar
+        btnSave.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showToast("⚠️ Precisas de uma conta para salvar perfis!");
+        };
     }
     
     if (btnProfiles) {
