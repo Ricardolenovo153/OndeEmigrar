@@ -80,14 +80,34 @@ app.post("/api/logout", (req, res) => {
 // --- ROTA DE RANKING ---
 app.post('/api/ranking', (req, res) => {
     const { eco, sau, edu, pol, dir, emi } = req.body;
-    const sql = `SELECT c.country_name, i.gdp_per_capita, i.life_expectancy,
-        ((IFNULL(i.gdp_per_capita,0)*1*?) + (IFNULL(i.life_expectancy,0)*500*?) + 
-        (IFNULL(i.tertiary_education,0)*500*?) + (IFNULL(i.political_stability,0)*5000*?) + 
-        (IFNULL(i.rule_oflaw,0)*5000*?) - (IFNULL(i.share,0)*5000*?)) AS score_final
-        FROM indicator i JOIN country c ON i.country_id = c.id_country
-        WHERE i.year = 2020 ORDER BY score_final DESC LIMIT 5;`;
+    
+    // Query SQL otimizada para cálculo de ranking diretamente na BD
+    // Normalizamos os valores para que os pesos (0-100) façam sentido entre indicadores de escalas diferentes
+    const sql = `
+        SELECT 
+            c.country_name, 
+            i.gdp_per_capita, 
+            i.life_expectancy,
+            (
+                (IFNULL(i.gdp_per_capita, 0) / 1000 * ?) + 
+                (IFNULL(i.life_expectancy, 0) * ?) + 
+                (IFNULL(i.tertiary_education, 0) * 2 * ?) + 
+                (IFNULL(i.political_stability, 0) * 10 * ?) + 
+                (IFNULL(i.rule_oflaw, 0) * 10 * ?) - 
+                (IFNULL(i.share, 0) * 5 * ?)
+            ) AS score_final
+        FROM indicator i 
+        JOIN country c ON i.country_id = c.id_country
+        WHERE i.year = (SELECT MAX(year) FROM indicator)
+        ORDER BY score_final DESC 
+        LIMIT 10;
+    `;
+
     db.query(sql, [eco, sau, edu, pol, dir, emi], (err, results) => {
-        if (err) return res.status(500).json({ error: "Erro SQL" });
+        if (err) {
+            console.error("Erro SQL no Ranking:", err);
+            return res.status(500).json({ error: "Erro ao calcular ranking" });
+        }
         res.json(results);
     });
 });

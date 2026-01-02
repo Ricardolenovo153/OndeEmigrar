@@ -9,7 +9,7 @@ async function fetchProfiles() {
     try {
         const res = await fetch('http://localhost:3000/api/profiles');
         if (res.status === 401) {
-            window.location.href = '/'; // Se não autorizado, vai para login
+            window.location.href = '/login'; // Se não autorizado, vai para login
             return;
         }
         const data = await res.json();
@@ -209,8 +209,23 @@ function showToast(msg) {
     setTimeout(() => toast.remove(), 3000);
 }
 
+function updateSliderUI(index, value) {
+    const sliders = [0, 1, 2, 3, 4, 5].map(i => document.getElementById(`slider-${i}`));
+    const values = sliders.map(s => parseInt(s.value) || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+
+    if (total > 100) {
+        const excess = total - 100;
+        const newValue = Math.max(0, value - excess);
+        document.getElementById(`slider-${index}`).value = newValue;
+        document.getElementById(`val-${index}`).innerText = newValue + '%';
+    } else {
+        document.getElementById(`val-${index}`).innerText = value + '%';
+    }
+}
+
 document.querySelectorAll('.range-slider').forEach((slider, index) => {
     slider.addEventListener('input', function() { 
-        document.getElementById(`val-${index}`).innerText = this.value + '%'; 
+        updateSliderUI(index, parseInt(this.value));
     });
 });
