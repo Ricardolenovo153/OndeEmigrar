@@ -81,24 +81,20 @@ app.post("/api/logout", (req, res) => {
 app.post('/api/ranking', (req, res) => {
     const { eco, sau, edu, pol, dir, emi } = req.body;
     
-    // Query SQL otimizada para cálculo de ranking diretamente na BD
-    // Normalizamos os valores para que os pesos (0-100) façam sentido entre indicadores de escalas diferentes
     const sql = `
         SELECT 
-            c.country_name, 
-            i.gdp_per_capita, 
-            i.life_expectancy,
+            country.country_name, 
             (
-                (IFNULL(i.gdp_per_capita, 0) / 1000 * ?) + 
-                (IFNULL(i.life_expectancy, 0) * ?) + 
-                (IFNULL(i.tertiary_education, 0) * 2 * ?) + 
-                (IFNULL(i.political_stability, 0) * 10 * ?) + 
-                (IFNULL(i.rule_oflaw, 0) * 10 * ?) - 
-                (IFNULL(i.share, 0) * 5 * ?)
+                (indicator.gdp_per_capita / 1000 * ?) + 
+                (indicator.life_expectancy * ?) + 
+                (indicator.tertiary_education * 2 * ?) + 
+                (indicator.political_stability * 10 * ?) + 
+                (indicator.rule_oflaw * 10 * ?) - 
+                (indicator.share * 5 * ?)
             ) AS score_final
-        FROM indicator i 
-        JOIN country c ON i.country_id = c.id_country
-        WHERE i.year = (SELECT MAX(year) FROM indicator)
+        FROM indicator 
+        JOIN country ON indicator.country_id = country.id_country
+        WHERE indicator.year = 2020
         ORDER BY score_final DESC 
         LIMIT 10;
     `;
