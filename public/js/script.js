@@ -196,13 +196,30 @@ async function calculateRanking() {
 function renderRanking(data) {
     const container = document.getElementById('ranking-list');
     if(!data || data.length === 0) { container.innerHTML = '<p>Sem resultados.</p>'; return; }
-    container.innerHTML = data.map((c, i) => `
-        <div class="ranking-item">
-            <div class="rank-pos">#${i + 1}</div>
-            <div class="rank-info"><h3>${c.country_name}</h3></div>
-            <div class="rank-score">${Math.round(c.score_final)} pts</div>
-        </div>
-    `).join('');
+    
+    // Pegamos o score do primeiro classificado (#1) para calcular a diferença
+    const maxScore = data[0].score_final;
+
+    container.innerHTML = data.map((c, i) => {
+        // Calculamos a diferença (gap) aqui no JavaScript
+        const gap = Math.round(c.score_final - maxScore);
+        
+        // Só mostramos o gap se for menor que 0 (ou seja, do #2 para baixo)
+        const gapHtml = gap < 0 
+            ? `<div class="rank-gap" style="color: #ff4d4d; font-size: 0.85rem; font-weight: bold; margin-top: 4px;">${gap} pts</div>` 
+            : '';
+        
+        return `
+            <div class="ranking-item">
+                <div class="rank-pos">#${i + 1}</div>
+                <div class="rank-info"><h3>${c.country_name}</h3></div>
+                <div class="rank-score">
+                    <div>${Math.round(c.score_final)} pts</div>
+                    ${gapHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function getSliderValues() {
