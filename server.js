@@ -36,6 +36,28 @@ db.connect((err) => {
 });
 
 // --- AUTENTICAÇÃO ---
+app.post("/api/register", (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios" });
+    }
+    
+    // Verifica se o email já existe
+    db.query("SELECT * FROM user WHERE email = ?", [email], (err, results) => {
+        if (err) return res.status(500).json({ error: "Erro interno ao verificar email" });
+        if (results.length > 0) {
+            return res.status(400).json({ error: "Este e-mail já está registado" });
+        }
+
+        // Insere o novo utilizador
+        const sql = "INSERT INTO user (name, email, password) VALUES (?, ?, ?)";
+        db.query(sql, [name, email, password], (err, result) => {
+            if (err) return res.status(500).json({ error: "Erro ao criar conta" });
+            res.json({ message: "Conta criada com sucesso!", id: result.insertId });
+        });
+    });
+});
+
 app.post("/api/login", (req, res) => {
     const { email, password } = req.body;
     db.query("SELECT * FROM user WHERE email = ? AND password = ?", [email, password], (err, results) => {
