@@ -21,7 +21,7 @@ document.getElementById('register-form').addEventListener('submit', function (e)
         showToast(`Conta criada com sucesso, ${name.split(' ')[0]}!`);
 
         setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         }, 1500);
     } else {
         showToast('Preenche todos os campos corretamente (palavra-passe ≥ 6 caracteres).');

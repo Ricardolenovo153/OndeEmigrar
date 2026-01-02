@@ -122,17 +122,28 @@ app.delete("/api/profiles/:id", (req, res) => {
 
 // --- ROTAS DE PÁGINAS (AQUI ESTAVA O ERRO DO DASHBOARD) ---
 
-// Página de Login (Root)
+// --- ROTAS DE PÁGINAS ---
+
+// Página Inicial
 app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/views", "home.html"));
+});
+
+// Página de Login
+app.get("/login", (req, res) => {
     res.sendFile(path.join(__dirname, "public/views", "login.html"));
+});
+
+// Página de Registo
+app.get("/registo", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/views", "registo.html"));
 });
 
 // Página de Dashboard (Protegida)
 app.get("/dashboard", (req, res) => {
     if (!req.session.userId) {
-        return res.redirect("/"); // Se não tiver logado, manda para o login
+        return res.redirect("/login"); // Se não tiver logado, manda para o login
     }
-    // Serve o ficheiro dashboard.html
     res.sendFile(path.join(__dirname, "public/views", "dashboard.html"));
 });
 
