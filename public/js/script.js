@@ -1,15 +1,39 @@
 let profiles = [];
 
+const isGuest = new URLSearchParams(window.location.search).get('guest') === 'true';
+
 window.onload = async () => {
-    await fetchProfiles();
-    renderProfiles();
+    if (isGuest) {
+        setupGuestMode();
+    } else {
+        await fetchProfiles();
+        renderProfiles();
+    }
 };
 
+function setupGuestMode() {
+    const btnSave = document.querySelector('.btn-save');
+    const btnProfiles = document.getElementById('btn-count-perfil');
+    
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.style.opacity = '0.5';
+        btnSave.title = "Regista-te para salvar perfis";
+        btnSave.onclick = () => showToast("⚠️ Precisas de uma conta para salvar perfis!");
+    }
+    
+    if (btnProfiles) {
+        btnProfiles.style.display = 'none';
+    }
+}
+
 async function fetchProfiles() {
+    if (isGuest) return;
     try {
         const res = await fetch('http://localhost:3000/api/profiles');
         if (res.status === 401) {
-            window.location.href = '/login'; // Se não autorizado, vai para login
+            // Se não for convidado e der 401, manda para login
+            window.location.href = '/login';
             return;
         }
         const data = await res.json();
@@ -169,7 +193,7 @@ function renderRanking(data) {
     container.innerHTML = data.map((c, i) => `
         <div class="ranking-item">
             <div class="rank-pos">#${i + 1}</div>
-            <div class="rank-info"><h3>${c.country_name}</h3><p>PIB: $${c.gdp_per_capita}</p></div>
+            <div class="rank-info"><h3>${c.country_name}</h3></div>
             <div class="rank-score">${Math.round(c.score_final)} pts</div>
         </div>
     `).join('');

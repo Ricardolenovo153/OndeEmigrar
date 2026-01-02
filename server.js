@@ -177,10 +177,11 @@ app.get("/registo", (req, res) => {
     res.sendFile(path.join(__dirname, "public/views", "registo.html"));
 });
 
-// Página de Dashboard (Protegida)
+// Página de Dashboard
 app.get("/dashboard", (req, res) => {
-    if (!req.session.userId) {
-        return res.redirect("/login"); // Se não tiver logado, manda para o login
+    const isGuest = req.query.guest === 'true';
+    if (!req.session.userId && !isGuest) {
+        return res.redirect("/login"); // Se não tiver logado e não for convidado, manda para o login
     }
     res.sendFile(path.join(__dirname, "public/views", "dashboard.html"));
 });
