@@ -85,12 +85,12 @@ app.post('/api/ranking', (req, res) => {
         SELECT 
             country.country_name, 
             (
-                (indicator.gdp_per_capita / 1000 * ?) + 
-                (indicator.life_expectancy * ?) + 
-                (indicator.tertiary_education * 2 * ?) + 
-                (indicator.political_stability * 10 * ?) + 
-                (indicator.rule_oflaw * 10 * ?) - 
-                (indicator.share * 5 * ?)
+                (IFNULL(indicator.gdp_per_capita, 0) / 1000 * ?) + 
+                (IFNULL(indicator.life_expectancy, 0) * ?) + 
+                (IFNULL(indicator.tertiary_education, 0) * 2 * ?) + 
+                (IFNULL(indicator.political_stability, 0) * 10 * ?) + 
+                (IFNULL(indicator.rule_oflaw, 0) * 10 * ?) - 
+                (IFNULL(indicator.share, 0) * 5 * ?)
             ) AS score_final
         FROM indicator 
         JOIN country ON indicator.country_id = country.id_country
